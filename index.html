@@ -1,0 +1,220 @@
+
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>爱心与烟花</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #000;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+        
+        #container {
+            position: relative;
+            text-align: center;
+            z-index: 2;
+        }
+        
+        .heart {
+            width: 100px;
+            height: 100px;
+            background-color: #f00;
+            position: relative;
+            transform: rotate(45deg);
+            animation: beat 1s infinite;
+            margin: 0 auto 50px;
+        }
+        
+        .heart::before,
+        .heart::after {
+            content: '';
+            width: 100px;
+            height: 100px;
+            background-color: #f00;
+            border-radius: 50%;
+            position: absolute;
+        }
+        
+        .heart::before {
+            left: -50px;
+            top: 0;
+        }
+        
+        .heart::after {
+            left: 0;
+            top: -50px;
+        }
+        
+        .text {
+            font-size: 48px;
+            color: #fff;
+            font-weight: bold;
+            text-shadow: 0 0 10px #fff, 0 0 20px #fff, 0 0 30px #ff00de, 0 0 40px #ff00de;
+            animation: textGlow 2s infinite;
+        }
+        
+        @keyframes beat {
+            0%, 100% { transform: rotate(45deg) scale(1); }
+            50% { transform: rotate(45deg) scale(1.2); }
+        }
+        
+        @keyframes textGlow {
+            0%, 100% { text-shadow: 0 0 10px #fff, 0 0 20px #fff, 0 0 30px #ff00de, 0 0 40px #ff00de; }
+            50% { text-shadow: 0 0 20px #fff, 0 0 30px #ff00de, 0 0 40px #ff00de, 0 0 50px #ff00de; }
+        }
+        
+        canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div class="heart"></div>
+        <div class="text">今天的不开心就到此为止吧，明天依旧光芒万丈</div>
+    </div>
+    <canvas id="fireworks"></canvas>
+    
+    <script>
+        const canvas = document.getElementById('fireworks');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        const fireworks = [];
+        const particles = [];
+        const colors = ['#f00', '#ff0', '#0f0', '#0ff', '#00f', '#f0f', '#fff'];
+        const textSize = canvas.width > 768 ? 24 : 16;
+        
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                this.radius = Math.random() * 2 + 1;
+                this.velocity = {
+                    x: (Math.random() - 0.5) * 8,
+                    y: (Math.random() - 0.5) * 8
+                };
+                this.alpha = 1;
+                this.friction = 0.98;
+                this.gravity = 0.03;
+            }
+            
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.alpha;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+                ctx.restore();
+            }
+            
+            update() {
+                this.velocity.x *= this.friction;
+                this.velocity.y *= this.friction;
+                this.velocity.y += this.gravity;
+                this.x += this.velocity.x;
+                this.y += this.velocity.y;
+                this.alpha -= 0.01;
+            }
+        }
+        
+        class Firework {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = canvas.height;
+                this.targetY = Math.random() * canvas.height / 2;
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+                this.speed = Math.random() * 2 + 1;
+                this.radius = 3;
+            }
+            
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+            }
+            
+            update() {
+                this.y -= this.speed;
+                
+                if (this.y <= this.targetY) {
+                    this.explode();
+                    fireworks.splice(fireworks.indexOf(this), 1);
+                }
+            }
+            
+            explode() {
+                for (let i = 0; i < 100; i++) {
+                    particles.push(new Particle(this.x, this.y, this.color));
+                }
+            }
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            if (Math.random() < 0.03) {
+                fireworks.push(new Firework());
+            }
+            
+            for (let i = 0; i < fireworks.length; i++) {
+                fireworks[i].draw();
+                fireworks[i].update();
+            }
+            
+            for (let i = 0; i < particles.length; i++) {
+                particles[i].draw();
+                particles[i].update();
+                
+                if (particles[i].alpha <= 0) {
+                    particles.splice(i, 1);
+                    i--;
+                }
+            }
+        }
+        
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+        
+        animate();
+        
+        // 添加特殊交互效果
+        let lastClick = Date.now();
+        document.addEventListener('click', function(e) {
+            const now = Date.now();
+            if (now - lastClick < 500) return;
+            
+            lastClick = now;
+            
+            // 创建大爆炸效果
+            const centerX = e.clientX;
+            const centerY = e.clientY;
+            
+            for (let i = 0; i < 200; i++) {
+                particles.push(new Particle(centerX, centerY, colors[Math.floor(Math.random() * colors.length)]));
+            }
+        });
+    </script>
+</body>
+</html>
