@@ -141,7 +141,7 @@
         let bird = {};
         let pipes = [];
         let gameSpeed = 2;
-        let gravity = 0.25;
+        let gravity = 0.20; // 降低重力，下降更慢
         let jumpForce = -5;
         let score = 0;
         let gameRunning = false;
@@ -266,8 +266,8 @@
                 bird.velocity = 0;
             }
             
-            // 创建新管道
-            if (frameCount % 100 === 0) {
+            // 创建新管道 - 关键修改：增加管道间隔
+            if (frameCount % 180 === 0) {  // 从100增加到180帧，距离拉远80%
                 createPipe();
             }
             
@@ -336,9 +336,8 @@
         function startGame() {
             initGame();
             gameRunning = true;
-            // 修复点：确保所有界面正确隐藏
             startScreen.style.display = 'none';
-            gameOverScreen.style.display = 'none';
+            gameOverScreen.style.display = 'none'; // 确保结束界面被隐藏
             gameLoop();
         }
         
